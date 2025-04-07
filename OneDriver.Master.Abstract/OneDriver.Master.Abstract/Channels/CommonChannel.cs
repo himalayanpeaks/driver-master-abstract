@@ -4,18 +4,18 @@ using System.Windows.Input;
 namespace OneDriver.Master.Abstract.Channels
 {
     public class CommonChannel<TCommonSensorParameter>
-        : BaseChannelWithProcessData<CommonChannelParams<TCommonSensorParameter>,
-            CommonChannelProcessData<TCommonSensorParameter>>
-        where TCommonSensorParameter : CommonSensorParameter
+                    : BaseChannelWithProcessData<CommonChannelParams<TCommonSensorParameter>,
+                        CommonChannelProcessData<TCommonSensorParameter>>
+                    where TCommonSensorParameter : CommonSensorParameter
     {
+        private CommonChannelParams<TCommonSensorParameter> commonChannelParams;
+        private CommonChannelProcessData<TCommonSensorParameter> commonChannelProcessData;
 
-
-        protected CommonChannel(CommonChannelParams<TCommonSensorParameter> parameters,
-            CommonChannelProcessData<TCommonSensorParameter> processData) : base(parameters, processData)
+        public CommonChannel(CommonChannelParams<TCommonSensorParameter> commonChannelParams, CommonChannelProcessData<TCommonSensorParameter> commonChannelProcessData)
+            : base(commonChannelParams, commonChannelProcessData)
         {
-
+            this.commonChannelParams = commonChannelParams;
+            this.commonChannelProcessData = commonChannelProcessData;
         }
-
-
     }
 }
