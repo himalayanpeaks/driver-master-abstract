@@ -10,9 +10,7 @@ using System.ComponentModel;
 using ParameterTool.NSwagClass.Generator.Interface;
 using System.Text.RegularExpressions;
 using OneDriver.Master.Abstract.Contracts;
-using Definition = OneDriver.Master.Abstract.Contracts.Definition;
 using DataType = OneDriver.Helper.Definitions.DataType;
-using static OneDriver.Helper.Definitions;
 using static OneDriver.Master.Abstract.Contracts.Definition;
 using OneDriver.Helper;
 
@@ -40,7 +38,7 @@ namespace OneDriver.Master.Abstract
 
         }
 
-        public Definition.Error LoadDataFromPdb(string server, int deviceId, int protocolId)
+        public Contracts.Definition.Error LoadDataFromPdb(string server, int deviceId, int protocolId)
         {
             List<ParameterDetailsResponse> ret;
             try
@@ -57,14 +55,14 @@ namespace OneDriver.Master.Abstract
             {
                 Log.Error("Check for serverId, deviceId, protocolId");
             }
-            return Definition.Error.NoError;
+            return Contracts.Definition.Error.NoError;
         }
 
-        public Definition.Error LoadDataFromPdb(string server, int protocolId, out string? hashId)
+        public Contracts.Definition.Error LoadDataFromPdb(string server, int protocolId, out string? hashId)
         {
             hashId = Elements[Parameters.SelectedChannel].Parameters.HashId;
             if(string.IsNullOrEmpty(hashId))
-                return Definition.Error.HasdIdNotFound;
+                return Contracts.Definition.Error.HasdIdNotFound;
 
             try
             {
@@ -79,7 +77,7 @@ namespace OneDriver.Master.Abstract
             {
                 Log.Error("Check for serverId, hashId, protocolId");
             }
-            return Definition.Error.NoError;
+            return Contracts.Definition.Error.NoError;
         }
         private void ConvertAbstractData(List<ParameterDetailsResponse> dataFromDb, 
             CommonChannelParams<TSensorParam> sensor)
@@ -108,7 +106,7 @@ namespace OneDriver.Master.Abstract
                     var protocol = paramDetail.Protocols.First();
                     DataType type = (DataType)Enum.Parse(typeof(DataType), Regex.Replace(paramDetail.DataType, @"\d+", ""));
                     CommonSensorParameter local = new CommonSensorParameter(paramDetail.ParameterName, (int)protocol.Index,
-                        (OneDriver.Master.Abstract.Contracts.Definition.AccessType)Enum.Parse(typeof(AccessType), protocol.Accesses.First(x => x.Role == "RnD").Access),
+                        (Definition.AccessType)Enum.Parse(typeof(Definition.AccessType), protocol.Accesses.First(x => x.Role == "RnD").Access),
                         type, protocol.ArrayCount, protocol.BitLength, protocol.OffSet, null,
                         paramDetail.DefaultValue.Value, min, max, String.Join(";", valid.ToArray()));
                     local.PropertyChanging += Parameters_PropertyChanging;
@@ -122,169 +120,6 @@ namespace OneDriver.Master.Abstract
                     Log.Error(paramDetail.ParameterName + " invalid");
                 }
             }
-
-
-
-            #region DummyData_SSPP
-            ParameterDetailsResponse res = new ParameterDetailsResponse();
-            res.CategoryName = "StandardCommand";
-            CommonSensorParameter _command = new CommonSensorParameter("REST_TO_DEF", 40,
-                 AccessType.W, DataType.UINT, 1, 8, 0, "1", null, null,
-                null, null);
-            _command.PropertyChanging += Parameters_PropertyChanging;
-            _command.PropertyChanged += Parameters_PropertyChanged;
-
-            AddData(res, _command);
-
-            res.CategoryName = "ProcessData";
-            CommonSensorParameter _processData1 = new CommonSensorParameter("PD_IN_DISTANCE", 288,
-                AccessType.R, DataType.UINT, 1, 16, 16, null, null, null,
-                null, null);
-            _processData1.PropertyChanging += Parameters_PropertyChanging;
-            _processData1.PropertyChanged += Parameters_PropertyChanged;
-
-            AddData(res, _processData1);
-            _processData1 = new CommonSensorParameter("PD_IN_SCALE", 288,
-                AccessType.R, DataType.UINT, 1, 8, 8, null, null, null,
-                null, null);
-            _processData1.PropertyChanging += Parameters_PropertyChanging;
-            _processData1.PropertyChanged += Parameters_PropertyChanged;
-
-            AddData(res, _processData1);
-
-            _processData1 = new CommonSensorParameter("PD_IN_SIGNAL", 288,
-                AccessType.R, DataType.UINT, 1, 2, 2, null, null, null,
-                null, null);
-            _processData1.PropertyChanging += Parameters_PropertyChanging;
-            _processData1.PropertyChanged += Parameters_PropertyChanged;
-
-            AddData(res, _processData1);
-
-            _processData1 = new CommonSensorParameter("PD_IN_BDCH2", 288,
-                AccessType.R, DataType.UINT, 1, 1, 1, null, null, null,
-                null, null);
-            _processData1.PropertyChanging += Parameters_PropertyChanging;
-            _processData1.PropertyChanged += Parameters_PropertyChanged;
-
-            AddData(res, _processData1);
-
-            _processData1 = new CommonSensorParameter("PD_IN_BDCH1", 288,
-                AccessType.R, DataType.UINT, 1, 1, 0, null, null, null,
-                null, null);
-            _processData1.PropertyChanging += Parameters_PropertyChanging;
-            _processData1.PropertyChanged += Parameters_PropertyChanged;
-
-            AddData(res, _processData1);
-
-            #endregion DummyData_SSPP
-            /*
-            #region DummyData_IOLINK
-            res.CategoryName = "StandardCommand";
-            res.Protocols = new List<ProtocolInformation>();
-            res.Protocols.Add(new ProtocolInformation());
-            res.Protocols.First().SubIndex = 0;
-            CommonParameter _command = new CommonParameter("REST_TO_DEF", 2,
-                    AccessType.W ,DataType.UINT ,1, 8, 0, "1", null, null,
-                null, null);
-            _command.PropertyChanging += Parameters_PropertyChanging;
-            _command.PropertyReadRequested += ConfigParametersOnPropertyReadRequested;
-            _command.PropertyChanged += Parameters_PropertyChanged;
-
-            AddData(res, _command);
-
-            res.CategoryName = "ProcessData";
-            CommonParameter _processData1 = new CommonParameter("PD_IN_DISTANCE", 40,
-                AccessType.R, DataType.UINT, 1, 16, 16, null, null, null,
-                null, null);
-            _processData1.PropertyChanging += Parameters_PropertyChanging;
-            _processData1.PropertyReadRequested += ConfigParametersOnPropertyReadRequested;
-            _processData1.PropertyChanged += Parameters_PropertyChanged;
-
-            AddData(res, _processData1);
-            _processData1 = new CommonParameter("PD_IN_SCALE", 40,
-                AccessType.R, DataType.UINT, 1, 8, 8, null, null, null,
-                null, null);
-            _processData1.PropertyChanging += Parameters_PropertyChanging;
-            _processData1.PropertyReadRequested += ConfigParametersOnPropertyReadRequested;
-            _processData1.PropertyChanged += Parameters_PropertyChanged;
-
-            AddData(res, _processData1);
-
-            _processData1 = new CommonParameter("PD_IN_SIGNAL", 40,
-                AccessType.R, DataType.UINT, 1, 4, 2, null, null, null,
-                null, null);
-            _processData1.PropertyChanging += Parameters_PropertyChanging;
-            _processData1.PropertyReadRequested += ConfigParametersOnPropertyReadRequested;
-            _processData1.PropertyChanged += Parameters_PropertyChanged;
-
-            AddData(res, _processData1);
-
-            _processData1 = new CommonParameter("PD_IN_BDCH2", 40,
-                AccessType.R, DataType.UINT, 1, 1, 1, null, null, null,
-                null, null);
-            _processData1.PropertyChanging += Parameters_PropertyChanging;
-            _processData1.PropertyReadRequested += ConfigParametersOnPropertyReadRequested;
-            _processData1.PropertyChanged += Parameters_PropertyChanged;
-
-            AddData(res, _processData1);
-
-            _processData1 = new CommonParameter("PD_IN_BDCH1", 40,
-                AccessType.R, DataType.UINT, 1, 1, 0, null, null, null,
-                null, null);
-            _processData1.PropertyChanging += Parameters_PropertyChanging;
-            _processData1.PropertyReadRequested += ConfigParametersOnPropertyReadRequested;
-            _processData1.PropertyChanged += Parameters_PropertyChanged;
-
-            AddData(res, _processData1);
-
-            #endregion DummyData_IOLINK
-
-            #region DummyData_CANOPEN
-            res.CategoryName = "StandardParameter";
-            res.Protocols = new List<ProtocolInformation>();
-            res.Protocols.Add(new ProtocolInformation());
-            res.Protocols.First().SubIndex = 1;
-            res.Protocols.First().AccessType = AccessTypeClass._1;
-            res.Protocols.First().Index = 0x2000;
-            _processData1 = new CommonParameter("Distance", 0x2000,
-                        AccessType.RW, DataType.UINT, 1, 16, 0, null, null, null,
-                        null, null);
-            _processData1.PropertyChanging += Parameters_PropertyChanging;
-            _processData1.PropertyReadRequested += ConfigParametersOnPropertyReadRequested;
-            _processData1.PropertyChanged += Parameters_PropertyChanged;
-
-            AddData(res, _processData1);
-
-            res.CategoryName = "StandardParameter";
-            res.Protocols = new List<ProtocolInformation>();
-            res.Protocols.Add(new ProtocolInformation());
-            res.Protocols.First().SubIndex = 0;
-            res.Protocols.First().AccessType = AccessTypeClass._0;
-            res.Protocols.First().Index = 0x1008;
-            _processData1 = new CommonParameter("Manufacturer device name", 0x1008,
-                        AccessType.R, DataType.CHAR, 1, 8*64, 0, null, null, null,
-                        null, null);
-            _processData1.PropertyChanging += Parameters_PropertyChanging;
-            _processData1.PropertyReadRequested += ConfigParametersOnPropertyReadRequested;
-            _processData1.PropertyChanged += Parameters_PropertyChanged;
-
-            AddData(res, _processData1);
-            res.CategoryName = "StandardParameter";
-            res.Protocols = new List<ProtocolInformation>();
-            res.Protocols.Add(new ProtocolInformation());
-            res.Protocols.First().SubIndex = 3;
-            res.Protocols.First().AccessType = AccessTypeClass._1;
-            res.Protocols.First().Index = 0x4000;
-            _processData1 = new CommonParameter("Measurement Configuration Filter Mode", 0x4000,
-                        AccessType.RW, DataType.UINT, 1, 8, 0, null, null, null,
-                        null, null);
-            _processData1.PropertyChanging += Parameters_PropertyChanging;
-            _processData1.PropertyReadRequested += ConfigParametersOnPropertyReadRequested;
-            _processData1.PropertyChanged += Parameters_PropertyChanged;
-
-            AddData(res, _processData1);
-            #endregion DummyData_CANOPEN
-            */
         }
 
         protected abstract void AddData(ParameterDetailsResponse paramDetail, CommonSensorParameter commonParameter);
@@ -313,33 +148,33 @@ namespace OneDriver.Master.Abstract
             }
         }
 
-        public Definition.Error SelectSensorAtPort(int portNumber)
+        public Contracts.Definition.Error SelectSensorAtPort(int portNumber)
         {
             if (portNumber < Elements.Count)
                 Parameters.SelectedChannel = portNumber;
             else
             {
                 Log.Error(portNumber + " doesn't exist");
-                return Definition.Error.ChannelError;
+                return Contracts.Definition.Error.ChannelError;
             }
-            return Definition.Error.NoError;
+            return Contracts.Definition.Error.NoError;
         }
 
         public abstract int ConnectSensor();
         public abstract int DisconnectSensor();
 
-        public Definition.Error UpdateDataFromSensor()
+        public Contracts.Definition.Error UpdateDataFromSensor()
         {
             if (ParameterDatabank == null)
             {
                 Log.Error("Database not connected");
-                return Definition.Error.DatabaseNotConnected;
+                return Contracts.Definition.Error.DatabaseNotConnected;
             }
 
             if (Parameters.IsConnected == false)
             {
                 Log.Error("UPT not connected");
-                return Definition.Error.UptNotConnected;
+                return Contracts.Definition.Error.UptNotConnected;
             }
 
             foreach (var param in Elements[Parameters.SelectedChannel].Parameters.StandardParameterCollection)
@@ -349,7 +184,7 @@ namespace OneDriver.Master.Abstract
             foreach (var param in Elements[Parameters.SelectedChannel].Parameters.SystemParameterCollection)
                 ReadParameterFromSensor(param);
 
-            return Definition.Error.NoError;
+            return Contracts.Definition.Error.NoError;
         }
 
         public void UpdateDataFromAllSensors()
@@ -374,7 +209,7 @@ namespace OneDriver.Master.Abstract
             TSensorParam? foundParam = FindParam(name);
             value = null;
             if (foundParam == null)
-                return (int)Definition.Error.ParameterNotFound;
+                return (int)Contracts.Definition.Error.ParameterNotFound;
             int err = ReadParameterFromSensor(foundParam);
             if (err == 0)
                 value = foundParam.Value;
@@ -428,7 +263,7 @@ namespace OneDriver.Master.Abstract
             if (foundCommand == null)
             {
                 Log.Error("Command not found: " + name);
-                return (int)Definition.Error.CommandNotFound;
+                return (int)Contracts.Definition.Error.CommandNotFound;
             }
 
             if (!DataConverter.ConvertTo(value, out var toWriteValue))
@@ -464,8 +299,8 @@ namespace OneDriver.Master.Abstract
         }
         public string GetErrorMessage(int errorCode)
         {
-            if (Enum.IsDefined(typeof(Definition.Error), errorCode))
-                return ((Definition.Error)errorCode).ToString();
+            if (Enum.IsDefined(typeof(Contracts.Definition.Error), errorCode))
+                return ((Contracts.Definition.Error)errorCode).ToString();
             if (Enum.IsDefined(typeof(DataConverter.DataError), errorCode))
                 return ((DataConverter.DataError)errorCode).ToString();
             return GetErrorAsText(errorCode);

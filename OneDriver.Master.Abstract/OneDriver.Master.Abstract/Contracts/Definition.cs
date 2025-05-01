@@ -21,12 +21,6 @@
             ProcessData,
             StandardInputOutput
         }
-        public enum AccessType
-        {
-            R,
-            W,
-            RW
-        }
 
     }
 }

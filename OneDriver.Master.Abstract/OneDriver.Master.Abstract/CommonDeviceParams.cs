@@ -6,14 +6,14 @@ namespace OneDriver.Master.Abstract
     public class CommonDeviceParams : BaseDeviceParam
     {
         private int protocolId;
-        private Definition.Mode _mode;
+        private Contracts.Definition.Mode _mode;
 
         public int ProtocolId
         {
             get => GetProperty(ref protocolId);
             set => SetProperty(ref protocolId, value);
         }
-        public Definition.Mode Mode
+        public Contracts.Definition.Mode Mode
         {
             get => _mode;
             set => SetProperty(ref _mode, value);

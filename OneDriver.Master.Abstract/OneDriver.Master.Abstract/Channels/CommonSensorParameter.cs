@@ -1,5 +1,4 @@
 ﻿using OneDriver.Framework.Module.Parameter;
-using OneDriver.Master.Abstract.Contracts;
 using DataType = OneDriver.Helper.Definitions.DataType;
 
 namespace OneDriver.Master.Abstract.Channels
