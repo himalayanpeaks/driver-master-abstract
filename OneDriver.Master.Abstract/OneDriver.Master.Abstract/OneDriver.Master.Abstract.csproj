@@ -12,8 +12,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="OneDriver.Framework" Version="1.4.0" />
-    <PackageReference Include="OneDriver.Helper" Version="1.0.0" />
+    <PackageReference Include="DeviceDescriptor.Abstract" Version="1.1.4" />
+    <PackageReference Include="OneDriver.Framework" Version="1.5.0" />
   </ItemGroup>
 
 </Project>

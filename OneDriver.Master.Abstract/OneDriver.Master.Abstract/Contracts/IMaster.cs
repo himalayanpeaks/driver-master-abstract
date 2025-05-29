@@ -22,7 +22,5 @@ namespace OneDriver.Master.Abstract.Contracts
         public int WriteCommandToSensor<T>(string name, T value);
         public string GetErrorMessage(int errorCode);
         public string?[] GetAllParamsFromSensor();
-        public Definition.Error LoadDataFromPdb(string server, int deviceId, int protocolId);
-        public Definition.Error LoadDataFromPdb(string server, int protocolId, out string? hashId);
     }
 }

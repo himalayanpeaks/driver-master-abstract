@@ -1,21 +1,13 @@
-﻿using OneDriver.Framework.Module.Parameter;
-using System.Windows.Input;
-
+﻿using DeviceDescriptor.Abstract;
+using OneDriver.Framework.Module.Parameter;
 namespace OneDriver.Master.Abstract.Channels
 {
-    public class CommonChannel<TCommonSensorParameter>
-                    : BaseChannelWithProcessData<CommonChannelParams<TCommonSensorParameter>,
-                        CommonChannelProcessData<TCommonSensorParameter>>
-                    where TCommonSensorParameter : CommonSensorParameter
+    public class CommonChannel<TBaseVariable>
+                    : BaseChannel<BasicDescriptor<TBaseVariable>>
+                    where TBaseVariable : DeviceDescriptor.Abstract.Variables.BasicVariable
     {
-        private CommonChannelParams<TCommonSensorParameter> commonChannelParams;
-        private CommonChannelProcessData<TCommonSensorParameter> commonChannelProcessData;
-
-        public CommonChannel(CommonChannelParams<TCommonSensorParameter> commonChannelParams, CommonChannelProcessData<TCommonSensorParameter> commonChannelProcessData)
-            : base(commonChannelParams, commonChannelProcessData)
+        public CommonChannel(BasicDescriptor<TBaseVariable> parameters) : base(parameters)
         {
-            this.commonChannelParams = commonChannelParams;
-            this.commonChannelProcessData = commonChannelProcessData;
         }
     }
 }

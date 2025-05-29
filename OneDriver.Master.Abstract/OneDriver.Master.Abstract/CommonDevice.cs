@@ -1,129 +1,47 @@
 ﻿using OneDriver.Framework.Base;
-using OneDriver.Framework.Libs.DeviceDescriptor;
 using OneDriver.Framework.Libs.Validator;
 using OneDriver.Framework.Module;
 using OneDriver.Framework.Module.Parameter;
-using OneDriver.Master.Abstract.Channels;
 using Serilog;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using ParameterTool.NSwagClass.Generator.Interface;
-using System.Text.RegularExpressions;
 using OneDriver.Master.Abstract.Contracts;
-using DataType = OneDriver.Helper.Definitions.DataType;
-using static OneDriver.Master.Abstract.Contracts.Definition;
-using OneDriver.Helper;
+using DeviceDescriptor.Abstract.Variables;
+using DeviceDescriptor.Abstract.Helper;
 
 namespace OneDriver.Master.Abstract
 {
     public abstract class CommonDevice<TDeviceParams, TSensorParam> :
-        BaseDeviceWithChannelsPd<TDeviceParams, CommonChannelParams<TSensorParam>, 
-            CommonChannelProcessData<TSensorParam>>, IMaster
+        BaseDeviceWithChannels<TDeviceParams, DeviceVariables<TSensorParam>>, IMaster
         where TDeviceParams : CommonDeviceParams
-        where TSensorParam : CommonSensorParameter, new()
+        where TSensorParam : BasicVariable, new()
     {
-        protected CommonDevice(TDeviceParams parameters, IValidator validator, 
-            ObservableCollection<BaseChannelWithProcessData<CommonChannelParams<TSensorParam>,
-            CommonChannelProcessData<TSensorParam>>> elements, IDeviceDescriptor parameterDatabank) 
-            : base(parameters, validator, elements)
+        protected CommonDevice(TDeviceParams parameters, IValidator validator,
+           ObservableCollection<BaseChannel<DeviceVariables<TSensorParam>>> elements)
+           : base(parameters, validator, elements)
         {
-            ParameterDatabank = parameterDatabank;
             Parameters.PropertyChanged += Parameters_PropertyChanged;
             Parameters.PropertyChanging += Parameters_PropertyChanging;
         }
 
-        public string?[] GetAllParamsFromSensor()
+        public string[] GetAllParamsFromSensor()
         {
-            return (Elements[Parameters.SelectedChannel].Parameters.SpecificParameterCollection.Select(x => x.Name)).ToArray();
+            var channelParams = Elements[Parameters.SelectedChannel].Parameters;
 
+            var allNames = new List<string>();
+
+            if (channelParams.SpecificVariableCollection != null)
+                allNames.AddRange(channelParams.SpecificVariableCollection.Select(x => x.Name));
+
+            if (channelParams.StandardVariableCollection != null)
+                allNames.AddRange(channelParams.StandardVariableCollection.Select(x => x.Name));
+
+            if (channelParams.SystemVariableCollection != null)
+                allNames.AddRange(channelParams.SystemVariableCollection.Select(x => x.Name));
+
+            return allNames.ToArray();
         }
 
-        public Contracts.Definition.Error LoadDataFromPdb(string server, int deviceId, int protocolId)
-        {
-            List<ParameterDetailsResponse> ret;
-            try
-            {
-                ret = ParameterDatabank.ReadData(server, deviceId, protocolId);
-                Elements[Parameters.SelectedChannel].Parameters.DeviceId = deviceId;
-                ConvertAbstractData(ret, Elements[Parameters.SelectedChannel].Parameters);
-            }
-            catch (Exception ex) when (
-                ex is HttpRequestException ||
-                ex is TaskCanceledException ||
-                ex is AggregateException
-            )
-            {
-                Log.Error("Check for serverId, deviceId, protocolId");
-            }
-            return Contracts.Definition.Error.NoError;
-        }
-
-        public Contracts.Definition.Error LoadDataFromPdb(string server, int protocolId, out string? hashId)
-        {
-            hashId = Elements[Parameters.SelectedChannel].Parameters.HashId;
-            if(string.IsNullOrEmpty(hashId))
-                return Contracts.Definition.Error.HasdIdNotFound;
-
-            try
-            {
-                var ret = ParameterDatabank.ReadData(server, hashId, protocolId);
-                ConvertAbstractData(ret, Elements[Parameters.SelectedChannel].Parameters);
-            }
-            catch (Exception ex) when (
-                ex is HttpRequestException ||
-                ex is TaskCanceledException ||
-                ex is AggregateException
-            )
-            {
-                Log.Error("Check for serverId, hashId, protocolId");
-            }
-            return Contracts.Definition.Error.NoError;
-        }
-        private void ConvertAbstractData(List<ParameterDetailsResponse> dataFromDb, 
-            CommonChannelParams<TSensorParam> sensor)
-        {
-            foreach (var paramDetail in dataFromDb)
-            {
-                string? min = null; string? max = null;
-                var valid = new List<string?>();
-                try
-                {
-                    if (!object.Equals(paramDetail.AllowedValues, null))
-                        foreach (var paramDetailAllowedValue in paramDetail.AllowedValues)
-                        {
-                            if (!string.IsNullOrEmpty(paramDetailAllowedValue.Min.Value) &&
-                                !string.IsNullOrEmpty(paramDetailAllowedValue.Max.Value))
-                            {
-                                min = paramDetailAllowedValue.Min.Value.ToString();
-                                max = paramDetailAllowedValue.Max.Value.ToString();
-                            }
-                            if (!string.IsNullOrEmpty(paramDetailAllowedValue.Min.Value) &&
-                                string.IsNullOrEmpty(paramDetailAllowedValue.Max.Value))
-                            {
-                                valid.Add(paramDetailAllowedValue.Min.Value.ToString());
-                            }
-                        }
-                    var protocol = paramDetail.Protocols.First();
-                    DataType type = (DataType)Enum.Parse(typeof(DataType), Regex.Replace(paramDetail.DataType, @"\d+", ""));
-                    CommonSensorParameter local = new CommonSensorParameter(paramDetail.ParameterName, (int)protocol.Index,
-                        (Definition.AccessType)Enum.Parse(typeof(Definition.AccessType), protocol.Accesses.First(x => x.Role == "RnD").Access),
-                        type, protocol.ArrayCount, protocol.BitLength, protocol.OffSet, null,
-                        paramDetail.DefaultValue.Value, min, max, String.Join(";", valid.ToArray()));
-                    local.PropertyChanging += Parameters_PropertyChanging;
-                    local.PropertyChanged += Parameters_PropertyChanged;
-
-                    AddData(paramDetail, local);
-
-                }
-                catch (Exception e)
-                {
-                    Log.Error(paramDetail.ParameterName + " invalid");
-                }
-            }
-        }
-
-        protected abstract void AddData(ParameterDetailsResponse paramDetail, CommonSensorParameter commonParameter);
-        protected IDeviceDescriptor ParameterDatabank { get; set; }
         /// <summary>
         /// Write here the validation of a param before its new value of a param is accepted 
         /// </summary>
@@ -162,26 +80,20 @@ namespace OneDriver.Master.Abstract
 
         public abstract int ConnectSensor();
         public abstract int DisconnectSensor();
-
+        protected abstract int ReadParam(TSensorParam param);
         public Contracts.Definition.Error UpdateDataFromSensor()
         {
-            if (ParameterDatabank == null)
-            {
-                Log.Error("Database not connected");
-                return Contracts.Definition.Error.DatabaseNotConnected;
-            }
-
             if (Parameters.IsConnected == false)
             {
-                Log.Error("UPT not connected");
+                Log.Error("Master not connected");
                 return Contracts.Definition.Error.UptNotConnected;
             }
 
-            foreach (var param in Elements[Parameters.SelectedChannel].Parameters.StandardParameterCollection)
+            foreach (var param in Elements[Parameters.SelectedChannel].Parameters.StandardVariableCollection)
                 ReadParameterFromSensor(param);
-            foreach (var param in Elements[Parameters.SelectedChannel].Parameters.SpecificParameterCollection)
+            foreach (var param in Elements[Parameters.SelectedChannel].Parameters.SpecificVariableCollection)
                 ReadParameterFromSensor(param);
-            foreach (var param in Elements[Parameters.SelectedChannel].Parameters.SystemParameterCollection)
+            foreach (var param in Elements[Parameters.SelectedChannel].Parameters.SystemVariableCollection)
                 ReadParameterFromSensor(param);
 
             return Contracts.Definition.Error.NoError;
@@ -225,20 +137,25 @@ namespace OneDriver.Master.Abstract
                 return 0;
             return err != 0 ? err : (int)DataConverter.DataError.UnsupportedDataType;
         }
-        private TSensorParam? FindCommand(string name) => Elements[Parameters.SelectedChannel].Parameters.CommandCollection
-                .FirstOrDefault(x => x.Name == name);
+        private TSensorParam? FindCommand(string name) => 
+            Elements[Parameters.SelectedChannel].Parameters.CommandCollection.FirstOrDefault(x => x.Name == name);
 
 
-        private TSensorParam FindParam(string name)
+        private TSensorParam? FindParam(string name)
         {
-            TSensorParam? parameter = new TSensorParam();
+            TSensorParam? parameter = default;
 
-            if (!Object.Equals((Elements[Parameters.SelectedChannel].Parameters.SpecificParameterCollection.Find(x => x.Name == name)), null))
-                parameter = Elements[Parameters.SelectedChannel].Parameters.SpecificParameterCollection.Find(x => x.Name == name);
-            if (!Object.Equals((Elements[Parameters.SelectedChannel].Parameters.SystemParameterCollection.Find(x => x.Name == name)), null))
-                parameter = Elements[Parameters.SelectedChannel].Parameters.SystemParameterCollection.Find(x => x.Name == name);
-            if (!Object.Equals((Elements[Parameters.SelectedChannel].Parameters.StandardParameterCollection.Find(x => x.Name == name)), null))
-                parameter = Elements[Parameters.SelectedChannel].Parameters.StandardParameterCollection.Find(x => x.Name == name);
+            if (Elements[Parameters.SelectedChannel].Parameters.SpecificVariableCollection != null)
+                parameter = Elements[Parameters.SelectedChannel].Parameters.SpecificVariableCollection
+                    .FirstOrDefault(x => x.Name == name);
+
+            if (parameter == null && Elements[Parameters.SelectedChannel].Parameters.SystemVariableCollection != null)
+                parameter = Elements[Parameters.SelectedChannel].Parameters.SystemVariableCollection
+                    .FirstOrDefault(x => x.Name == name);
+
+            if (parameter == null && Elements[Parameters.SelectedChannel].Parameters.StandardVariableCollection != null)
+                parameter = Elements[Parameters.SelectedChannel].Parameters.StandardVariableCollection
+                    .FirstOrDefault(x => x.Name == name);
 
             return parameter;
         }
@@ -321,7 +238,7 @@ namespace OneDriver.Master.Abstract
             return err;
         }
 
-        protected abstract int ReadParam(TSensorParam param);
+        
         protected abstract int WriteParam(TSensorParam param);
         protected abstract int WriteCommand(TSensorParam command);
         protected abstract string GetErrorAsText(int errorCode);

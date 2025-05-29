@@ -19,7 +19,6 @@ namespace OneDriver.Master.Abstract.UnitTest
                 "WriteCommandToSensor",
                 "GetErrorMessage",
                 "GetAllParamsFromSensor",
-                "LoadDataFromPdb"
             };
 
             var actual = typeof(IMaster).GetMethods()
