@@ -11,13 +11,13 @@ using DeviceDescriptor.Abstract.Helper;
 
 namespace OneDriver.Master.Abstract
 {
-    public abstract class CommonDevice<TDeviceParams, TSensorParam> :
-        BaseDeviceWithChannels<TDeviceParams, DeviceVariables<TSensorParam>>, IMaster
+    public abstract class CommonDevice<TDeviceParams, TSensorVariable> :
+        BaseDeviceWithChannels<TDeviceParams, DeviceVariables<TSensorVariable>>, IMaster
         where TDeviceParams : CommonDeviceParams
-        where TSensorParam : BasicVariable, new()
+        where TSensorVariable : BasicVariable, new()
     {
         protected CommonDevice(TDeviceParams parameters, IValidator validator,
-           ObservableCollection<BaseChannel<DeviceVariables<TSensorParam>>> elements)
+           ObservableCollection<BaseChannel<DeviceVariables<TSensorVariable>>> elements)
            : base(parameters, validator, elements)
         {
             Parameters.PropertyChanged += Parameters_PropertyChanged;
@@ -80,7 +80,7 @@ namespace OneDriver.Master.Abstract
 
         public abstract int ConnectSensor();
         public abstract int DisconnectSensor();
-        protected abstract int ReadParam(TSensorParam param);
+        protected abstract int ReadParam(TSensorVariable param);
         public Contracts.Definition.Error UpdateDataFromSensor()
         {
             if (Parameters.IsConnected == false)
@@ -118,7 +118,7 @@ namespace OneDriver.Master.Abstract
 
         public int ReadParameterFromSensor(string name, out string? value)
         {
-            TSensorParam? foundParam = FindParam(name);
+            TSensorVariable? foundParam = FindParam(name);
             value = null;
             if (foundParam == null)
                 return (int)Contracts.Definition.Error.ParameterNotFound;
@@ -137,13 +137,13 @@ namespace OneDriver.Master.Abstract
                 return 0;
             return err != 0 ? err : (int)DataConverter.DataError.UnsupportedDataType;
         }
-        private TSensorParam? FindCommand(string name) => 
+        private TSensorVariable? FindCommand(string name) => 
             Elements[Parameters.SelectedChannel].Parameters.CommandCollection.FirstOrDefault(x => x.Name == name);
 
 
-        private TSensorParam? FindParam(string name)
+        private TSensorVariable? FindParam(string name)
         {
-            TSensorParam? parameter = default;
+            TSensorVariable? parameter = default;
 
             if (Elements[Parameters.SelectedChannel].Parameters.SpecificVariableCollection != null)
                 parameter = Elements[Parameters.SelectedChannel].Parameters.SpecificVariableCollection
@@ -162,7 +162,7 @@ namespace OneDriver.Master.Abstract
 
         public int WriteParameterToSensor(string name, string value)
         {
-            if (DataConverter.ConvertTo<TSensorParam>(value, out var toWriteValue) == true)
+            if (DataConverter.ConvertTo<TSensorVariable>(value, out var toWriteValue) == true)
                 return WriteParameterToSensor(name, toWriteValue);
             return (int)DataConverter.DataError.InValidData;
         }
@@ -176,7 +176,7 @@ namespace OneDriver.Master.Abstract
 
         public int WriteCommandToSensor(string name, string value)
         {
-            TSensorParam? foundCommand = FindCommand(name);
+            TSensorVariable? foundCommand = FindCommand(name);
             if (foundCommand == null)
             {
                 Log.Error("Command not found: " + name);
@@ -192,7 +192,7 @@ namespace OneDriver.Master.Abstract
             foundCommand.Value = toWriteValue;
             return WriteCommandToSensor(foundCommand);
         }
-        internal int WriteCommandToSensor(TSensorParam command)
+        internal int WriteCommandToSensor(TSensorVariable command)
         {
             int err = 0;
             try
@@ -223,7 +223,7 @@ namespace OneDriver.Master.Abstract
             return GetErrorAsText(errorCode);
         }
         
-        private int ReadParameterFromSensor(TSensorParam parameter)
+        private int ReadParameterFromSensor(TSensorVariable parameter)
         {
             int err = 0;
             try
@@ -239,8 +239,8 @@ namespace OneDriver.Master.Abstract
         }
 
         
-        protected abstract int WriteParam(TSensorParam param);
-        protected abstract int WriteCommand(TSensorParam command);
+        protected abstract int WriteParam(TSensorVariable param);
+        protected abstract int WriteCommand(TSensorVariable command);
         protected abstract string GetErrorAsText(int errorCode);
     }
 }
